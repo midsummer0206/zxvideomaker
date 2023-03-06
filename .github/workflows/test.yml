@@ -109,6 +109,7 @@ jobs:
           for file in `find ~ -name "*release*.apk" -print`; do
             mv "$file" apk/zxvideo_${{ matrix.userName }}_${{ env.tag }}.apk
           done
+     
       - name: Upload App To Artifact
         uses: actions/upload-artifact@v3
         if: ${{ env.commit }}
@@ -116,4 +117,18 @@ jobs:
           name: ${{ matrix.userName }}-${{ matrix.repoName }}
           path: |
             TVBoxOSC/apk/*
-
+      - name: Whether Or Not to Publish
+        if: ${{ inputs.donotpublish && env.commit }}
+        run: |
+          echo "commit=" >> $GITHUB_ENV
+      - name: Release and Upload Assets
+        uses: ncipollo/release-action@v1
+        if: ${{ env.commit }}
+        with:
+          name: ${{ env.tag }}
+          tag: ${{ env.tag }}
+          allowUpdates: true
+          removeArtifacts: true
+          artifacts: |
+            TVBoxOSC/apk/*.apk
+            TVBoxOSC/source-${{ env.commitS }}.*
