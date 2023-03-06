@@ -24,9 +24,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - userName: q215613905
-            repoName: TVBoxOS
-            branchName: main
           - userName: midsummer0206
             repoName: TVBox-MS
             branchName: main
