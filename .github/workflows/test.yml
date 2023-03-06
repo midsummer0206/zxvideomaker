@@ -27,8 +27,8 @@ jobs:
           - userName: q215613905
             repoName: TVBoxOS
             branchName: main
-          - userName: takagen99
-            repoName: Box
+          - userName: midsummer0206
+            repoName: TVBox-MS
             branchName: main
     steps:
       - name: Checkout
