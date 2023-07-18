@@ -25,7 +25,7 @@ jobs:
       matrix:
         include:
           - userName: midsummer0206
-            repoName: MSVIDEO230718
+            repoName: MSVIDEO230719
             branchName: main
     steps:
       - name: Checkout
