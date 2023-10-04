@@ -25,7 +25,7 @@ jobs:
       matrix:
         include:
           - userName: midsummer0206
-            repoName: zxvideo231002
+            repoName: zxvideo20231004
             branchName: main
     steps:
       - name: Checkout
