@@ -12,10 +12,6 @@ on:
         description: '构建后不提交发布新版'
         required: false
         type: boolean
-      testOption:
-        description: 'arm64支持，不支持ijk解码'
-        required: false
-        type: boolean
 
 jobs:
   build:
@@ -25,8 +21,9 @@ jobs:
       matrix:
         include:
           - userName: midsummer0206
-            repoName: TV
-            branchName: release
+            repoName: zxvideo
+            branchName: main
+            java_ver: 17
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,13 +64,6 @@ jobs:
         run: |
           #zip -q -x ".git/*" -x  ".github/*" -r source-${{ env.commitS }}.zip .
           tar -cJf source-${{ env.commitS }}.tar.xz --exclude=.git --exclude=.github *
-      - name: Option For Test
-        if: ${{ inputs.testOption }}
-        working-directory: TVBoxOSC
-        run: |
-          #添加arm64支持，不支持ijk解码
-          sed -i "/armeabi-v7a[\'\"]$/s#\$#, 'arm64-v8a'#" app/build.gradle
-          sed -i "/armeabi-v7a[\'\"]$/s#\$#, 'arm64-v8a'#" player/build.gradle
       - name: Release Apk Sign
         if: ${{ env.commit }}
         working-directory: TVBoxOSC
@@ -88,20 +78,12 @@ jobs:
           sed -i '$a\RELEASE_KEY_ALIAS=TVBoxOSC'            ./gradle.properties
           sed -i '$a\RELEASE_STORE_PASSWORD=TVBoxOSC'       ./gradle.properties
           sed -i '$a\RELEASE_KEY_PASSWORD=TVBoxOSC'         ./gradle.properties
-      - name: Check JAVA Version
-        if: ${{ env.commit }}
-        working-directory: TVBoxOSC
-        run: |
-          setup_java_ver=$(grep -o 'JavaVersion.VERSION_[0-9_]\+' app/build.gradle |head -1 |sed 's/.*_//')
-          if [ $setup_java_ver -gt 11 ]; then
-            echo "setup_java_ver=$setup_java_ver" >> $GITHUB_ENV
-          fi
       - uses: actions/setup-java@v4
-        if: ${{ env.setup_java_ver }}
+        if: ${{ matrix.java_ver }}
         with:
           distribution: temurin
-          java-version: ${{ env.setup_java_ver }}
-      - uses: gradle/gradle-build-action@v2
+          java-version: ${{ matrix.java_ver }}
+      - uses: gradle/actions/setup-gradle@v3
         if: ${{ env.commit }}
       - name: Build With Gradle
         if: ${{ env.commit }}
@@ -116,8 +98,18 @@ jobs:
           rm -rf apk/
           mkdir -p apk/
           for file in `find ~ -name "*release*.apk" -print`; do
-            mv "$file" apk/zxvideo_${{ matrix.userName }}_${{ env.tag }}.apk
+            # 获取文件的基本名称
+            base=$(basename "$file")
+            # 如果文件是 TVBox_ 开头
+            if [[ "$base" == TVBox_* ]]; then
+              new_base=$(echo "$base" | sed "s/release/${{ matrix.userName }}_${{ env.tag }}/")
+            else
+              new_base="TVBox_${{ matrix.userName }}_${{ env.tag }}.apk"
+            fi
+            # 移动并重命名文件
+            mv "$file" "apk/$new_base"
           done
+          mv source-${{ env.commitS }}.* apk/
      
       - name: Upload App To Artifact
         uses: actions/upload-artifact@v3
@@ -140,4 +132,4 @@ jobs:
           removeArtifacts: true
           artifacts: |
             TVBoxOSC/apk/*.apk
-            TVBoxOSC/source-${{ env.commitS }}.*
+            TVBoxOSC/apk/source-${{ env.commitS }}.*
